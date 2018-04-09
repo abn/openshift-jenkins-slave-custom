@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+
+# The logic implemented in this script has been derrived from the following sources.
+# - https://github.com/openshift/origin/blob/master/images/base/Dockerfile.rhel7
+# - https://github.com/openshift/jenkins/blob/master/slave-base/Dockerfile.rhel7
+
+set -xe
+
+INSTALL_SCRIPT_PREFIX=${INSTALL_SCRIPT_PATH:-/usr/local/bin}/`basename "$0"`
+JENKINS_USER_ID=1001
+JENKINS_HOME=${JENKINS_HOME:-/home/jenkins}
+JAVA_PACKAGES=${JAVA_PACKAGES:-"java-1.8.0-openjdk-headless java-1.8.0-openjdk-headless.i686"}
+INSTALL_PKGS="which git tar wget hostname sysvinit-tools util-linux bsdtar
+socat ethtool device-mapper iptables tree findutils nmap-ncat e2fsprogs
+xfsprogs lsof bc gettext lsof rsync unzip zip bzip2
+"
+
+function command-check() {
+    type ${1} >/dev/null 2>&1
+}
+
+# avoid installing java-headless if image already has a version configured
+type javac > /dev/null 2>&1 || {
+  INSTALL_PKGS="${INSTALL_PKGS} ${JAVA_PACKAGES}"
+}
+
+if command-check microdnf; then
+    PACKAGE_MANAGER="microdnf"
+    PACKAGE_INSTALL="microdnf --nodocs install"
+elif command-check dnf; then
+    PACKAGE_MANAGER="dnf"
+    PACKAGE_INSTALL="dnf -y --nodocs install"
+elif command-check yum; then
+    PACKAGE_MANAGER="yum"
+    PACKAGE_INSTALL="yum -y --setopt=tsflags=nodocs install"
+else
+    echo >&2 "ERROR: No supported package manager found"
+    exit 1
+fi
+
+export PACKAGE_MANAGER
+export PACKAGE_INSTALL="${PACKAGE_INSTALL} ${PACKAGE_INSTALL_EXTRA_ARGS}"
+export PACKAGE_CLEAN="${PACKAGE_MANAGER} clean all"
+
+${PACKAGE_INSTALL} ${INSTALL_PKGS}
+${PACKAGE_CLEAN}
+
+install -d /var/lib/origin ${JENKINS_HOME}
+
+chown -R 1001:0 ${JENKINS_HOME}
+chmod -R g+w ${JENKINS_HOME}
+chmod 664 /etc/passwd
+chmod -R 755 /etc/alternatives \
+  /var/lib/{alternatives,origin} \
+  /usr/lib/{jvm,jvm-exports} \
+  /usr/bin \
+  /usr/share/man/man1
+
+FILENAMES="java jjs keytool orbd pack200 policytool rmid rmiregistry servertool tnameserv unpack200"
+for f in ${FILENAMES}; do
+  unlink /usr/bin/${f}
+  unlink /usr/share/man/man1/${f}.1.gz
+done
+
+unlink /usr/lib/jvm-exports/jre
+
+# run any language specific actions
+for f in extras ${JENKINS_SLAVE_BUILD} ${JENKINS_SLAVE_BUILD}-${JENKINS_SLAVE_VERSION}; do
+  SCRIPT=${INSTALL_SCRIPT_PREFIX}-${f}
+  if [ -f ${SCRIPT} ]; then
+    ${SCRIPT}
+  fi
+done
