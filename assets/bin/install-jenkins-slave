@@ -19,28 +19,56 @@ function command-check() {
     type ${1} >/dev/null 2>&1
 }
 
+function configure-package-manager-rhel() {
+  # we need to ensure repos required are available when working on rhel base
+  DISTRO=`bash -c 'source /etc/os-release && echo $ID'`
+  if [ "${DISTRO}" == "rhel" ]; then
+    DISTRO_VERSION=`bash -c 'source /etc/os-release && echo $VERSION'`
+    REPO_VERSION=${DISTRO_VERSION:0:1}
+
+    if [ "${PACKAGE_MANAGER}" == "yum" ]; then
+      yum-config-manager --enable rhel-${REPO_VERSION}-server-rpms || :
+      yum-config-manager --enable rhel-${REPO_VERSION}-server-extras-rpms || :
+      yum-config-manager --enable rhel-${REPO_VERSION}-server-optional-rpms || :
+      yum-config-manager --disable epel >/dev/null || :
+    else
+      export PACKAGE_INSTALL_EXTRA_ARGS="${PACKAGE_INSTALL_EXTRA_ARGS}
+        --enablerepo=rhel-${REPO_VERSION}-server-rpms
+        --enablerepo=rhel-${REPO_VERSION}-server-extras-rpms
+        --enablerepo=rhel-${REPO_VERSION}-server-optional-rpms
+      "
+  fi
+}
+
+function configure-package-manager() {
+  if command-check microdnf; then
+      PACKAGE_MANAGER="microdnf"
+      PACKAGE_INSTALL="microdnf --nodocs install"
+  elif command-check dnf; then
+      PACKAGE_MANAGER="dnf"
+      PACKAGE_INSTALL="dnf -y --nodocs install"
+  elif command-check yum; then
+      PACKAGE_MANAGER="yum"
+      PACKAGE_INSTALL="yum -y --setopt=tsflags=nodocs install"
+  else
+      echo >&2 "ERROR: No supported package manager found"
+      exit 1
+  fi
+
+  export PACKAGE_MANAGER
+
+  configure-package-manager-rhel
+
+  export PACKAGE_INSTALL="${PACKAGE_INSTALL} ${PACKAGE_INSTALL_EXTRA_ARGS}"
+  export PACKAGE_CLEAN="${PACKAGE_MANAGER} clean all"
+}
+
 # avoid installing java-headless if image already has a version configured
 type javac > /dev/null 2>&1 || {
   INSTALL_PKGS="${INSTALL_PKGS} ${JAVA_PACKAGES}"
 }
 
-if command-check microdnf; then
-    PACKAGE_MANAGER="microdnf"
-    PACKAGE_INSTALL="microdnf --nodocs install"
-elif command-check dnf; then
-    PACKAGE_MANAGER="dnf"
-    PACKAGE_INSTALL="dnf -y --nodocs install"
-elif command-check yum; then
-    PACKAGE_MANAGER="yum"
-    PACKAGE_INSTALL="yum -y --setopt=tsflags=nodocs install"
-else
-    echo >&2 "ERROR: No supported package manager found"
-    exit 1
-fi
-
-export PACKAGE_MANAGER
-export PACKAGE_INSTALL="${PACKAGE_INSTALL} ${PACKAGE_INSTALL_EXTRA_ARGS}"
-export PACKAGE_CLEAN="${PACKAGE_MANAGER} clean all"
+configure-package-manager
 
 ${PACKAGE_INSTALL} ${INSTALL_PKGS}
 ${PACKAGE_CLEAN}
