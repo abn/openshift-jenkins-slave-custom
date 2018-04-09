@@ -37,6 +37,7 @@ function configure-package-manager-rhel() {
         --enablerepo=rhel-${REPO_VERSION}-server-extras-rpms
         --enablerepo=rhel-${REPO_VERSION}-server-optional-rpms
       "
+    fi
   fi
 }
 
