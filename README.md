@@ -42,6 +42,7 @@ oc process \
   -p JENKINS_SLAVE_RELEASE=1 \
   -p 'EXTRA_PACKAGES="git make gcc"' \
   -f https://raw.githubusercontent.com/abn/openshift-jenkins-slave-custom/master/openshift/template.yml \
+    | oc apply -f -
 ```
 #### Example Build Configuration
 The following build configuration will work on any OpenShift Container Platform cluster with valid host subscriptions and a pre-defined image stream.
