@@ -1,0 +1,101 @@
+---
+apiVersion: v1
+kind: Template
+labels:
+  template: jenkins-slave-builder
+message: >
+  A Jenkins Slave Image build configuration and image stream has been
+  added to your project.
+metadata:
+  annotations:
+    description: |-
+      Build Jenkins Slave Images from any specified Red Hat base image.
+    iconClass: icon-jenkins
+    openshift.io/display-name: Jenkins Slave Builder
+    tags: jenkins,builder,jenkins-slave
+    template.openshift.io/documentation-url: https://docs.openshift.org/latest/using_images/other_images/jenkins.html
+    template.openshift.io/long-description: >
+      This template instantiates a build and image stream configuration for a
+      Jenkins Slave based on a specified base image.
+
+      These slaves allows for any language base image to be converted to become
+      a jenkins slave image.
+  name: jenkins-slave-builder
+objects:
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      build: jenkins-slave-${JENKINS_SLAVE_BUILD}
+      role: jenkins-slave
+    name: jenkins-slave-${JENKINS_SLAVE_BUILD}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: jenkins-slave-${JENKINS_SLAVE_BUILD}:latest
+    runPolicy: SerialLatestOnly
+    source:
+      git:
+        uri: ${SOURCE}
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: "${BASE_IMAGE}"
+          namespace: "${BASE_IMAGE_NAMESPACE}"
+        buildArgs:
+          - name: BUILD
+            value: "${JENKINS_SLAVE_BUILD}"
+          - name: VERSION
+            value: "${JENKINS_SLAVE_VERSION}"
+          - name: RELEASE
+            value: ${JENKINS_SLAVE_RELEASE}
+          - name: EXTRA_PACKAGES
+            value: "${EXTRA_PACKAGES}"
+      type: Docker
+    triggers:
+    - type: ImageChange
+      imageChange:
+          from:
+            kind: ImageStreamTag
+            name: "${BASE_IMAGE}"
+            namespace: "${BASE_IMAGE_NAMESPACE}"
+    - type: ConfigChange
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      build: jenkins-slave-${JENKINS_SLAVE_BUILD}
+      role: jenkins-slave
+    name: jenkins-slave-${JENKINS_SLAVE_BUILD}
+parameters:
+- description: The base image to use for this slave build.
+  displayName: Base Image
+  name: BASE_IMAGE
+  required: true
+- description: The namespace the base image for the build resides in.
+  displayName: Base Image Namespace
+  name: BASE_IMAGE_NAMESPACE
+  value: openshift
+- description: Jenkins slave build name to use (eg. springboot, nodejs, base).
+  displayName: Jenkins Slave Build
+  name: JENKINS_SLAVE_BUILD
+  required: true
+- description: Jenkins slave build version.
+  displayName: Jenkins Slave Version
+  name: JENKINS_SLAVE_VERSION
+  value: "1"
+- description: Jenkins slave build release.
+  displayName: Jenkins Slave Release
+  name: JENKINS_SLAVE_RELEASE
+  value: "1"
+- description: Extra packages to install during build (space separated).
+  displayName: Extra Packages
+  name: EXTRA_PACKAGES
+  required: false
+- description: Source repository containing Dockerfile and build assets.
+  displayName: Image Source Repository
+  name: SOURCE
+  value: https://github.com/abn/openshift-jenkins-slave-custom.git
