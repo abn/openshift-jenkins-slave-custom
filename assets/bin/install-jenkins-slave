@@ -79,7 +79,7 @@ install -d /var/lib/origin ${JENKINS_HOME}
 chown -R 1001:0 ${JENKINS_HOME}
 chmod -R g+w ${JENKINS_HOME}
 chmod 664 /etc/passwd
-chmod -R 755 /etc/alternatives \
+chmod -R 775 /etc/alternatives \
   /var/lib/{alternatives,origin} \
   /usr/lib/{jvm,jvm-exports} \
   /usr/bin \
