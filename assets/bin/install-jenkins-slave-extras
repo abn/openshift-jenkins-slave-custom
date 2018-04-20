@@ -1,4 +1,20 @@
 #!/usr/bin/env bash
-# 
-# Placeholder script for additional actions on jenkins installation
 
+set -x
+
+EXTRA_SCRIPTS_DIR=/var/lib/jenkins-install-scripts
+install -d ${EXTRA_SCRIPTS_DIR}
+
+pushd ${EXTRA_SCRIPTS_DIR}
+
+for p in ${EXTRA_SCRIPTS_URLS}; do
+  curl -O ${p}
+done
+
+chmod +x ${EXTRA_SCRIPTS_DIR}/*
+
+for s in $(ls ${EXTRA_SCRIPTS_DIR}); do
+  ./${s}
+done
+
+popd

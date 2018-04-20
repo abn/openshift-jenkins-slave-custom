@@ -32,7 +32,7 @@ function configure-package-manager-rhel() {
       yum-config-manager --enable rhel-${REPO_VERSION}-server-optional-rpms || :
       yum-config-manager --disable epel >/dev/null || :
     else
-      export PACKAGE_INSTALL_EXTRA_ARGS="${PACKAGE_INSTALL_EXTRA_ARGS}
+      export PACKAGE_MANAGER_INSTALL_EXTRA_ARGS="${PACKAGE_MANAGER_INSTALL_EXTRA_ARGS}
         --enablerepo=rhel-${REPO_VERSION}-server-rpms
         --enablerepo=rhel-${REPO_VERSION}-server-extras-rpms
         --enablerepo=rhel-${REPO_VERSION}-server-optional-rpms
@@ -60,7 +60,7 @@ function configure-package-manager() {
 
   configure-package-manager-rhel
 
-  export PACKAGE_INSTALL="${PACKAGE_INSTALL} ${PACKAGE_INSTALL_EXTRA_ARGS}"
+  export PACKAGE_INSTALL="${PACKAGE_INSTALL} ${PACKAGE_MANAGER_INSTALL_EXTRA_ARGS}"
   export PACKAGE_CLEAN="${PACKAGE_MANAGER} clean all"
 }
 
@@ -71,7 +71,7 @@ type javac > /dev/null 2>&1 || {
 
 configure-package-manager
 
-${PACKAGE_INSTALL} ${INSTALL_PKGS}
+${PACKAGE_INSTALL} ${INSTALL_PKGS} ${EXTRA_PACKAGES}
 ${PACKAGE_CLEAN}
 
 install -d /var/lib/origin ${JENKINS_HOME}
@@ -93,7 +93,7 @@ done
 
 unlink /usr/lib/jvm-exports/jre
 
-# run any language specific actions
+# run any build specific actions
 for f in extras ${JENKINS_SLAVE_BUILD} ${JENKINS_SLAVE_BUILD}-${JENKINS_SLAVE_VERSION}; do
   SCRIPT=${INSTALL_SCRIPT_PREFIX}-${f}
   if [ -f ${SCRIPT} ]; then
