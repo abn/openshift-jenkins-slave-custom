@@ -27,7 +27,7 @@ USER root
 
 ADD assets/bin/* /usr/local/bin/
 ADD https://github.com/openshift/jenkins/blob/master/slave-base/contrib/bin/run-jnlp-client /usr/local/bin/run-jnlp-client
-RUN chmod +x /usr/local/bin/run-jnlp-client
+RUN chmod +rx /usr/local/bin/run-jnlp-client
 
 # install and initialise the jenkins-slave components
 RUN /usr/local/bin/install-jenkins-slave
