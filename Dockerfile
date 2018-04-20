@@ -26,8 +26,12 @@ ENV HOME=/home/jenkins \
 USER root
 
 ADD assets/bin/* /usr/local/bin/
-ADD https://raw.githubusercontent.com/openshift/jenkins/master/slave-base/contrib/bin/run-jnlp-client /usr/local/bin/run-jnlp-client
-RUN chmod +rx /usr/local/bin/run-jnlp-client
+ADD https://raw.githubusercontent.com/openshift/jenkins/master/slave-base/contrib/bin/run-jnlp-client \
+  https://raw.githubusercontent.com/openshift/jenkins/master/slave-base/contrib/bin/configure-agent \
+  https://raw.githubusercontent.com/openshift/jenkins/master/slave-base/contrib/bin/configure-slave \
+  https://raw.githubusercontent.com/openshift/jenkins/master/slave-base/contrib/bin/generate_container_user \
+  /usr/local/bin/
+RUN chmod +rx /usr/local/bin/{run-jnlp-client,configure-slave,configure-agent,generate_container_user}
 
 # install and initialise the jenkins-slave components
 RUN /usr/local/bin/install-jenkins-slave
