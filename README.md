@@ -26,6 +26,23 @@ sed s='FROM .*'='FROM registry.access.redhat.com/rhel-atomic:latest'= Dockerfile
 The installation script allows for several hooks to be executed specific to the build and can be extended by using externalised configuration. More details coming soon.
 
 ### OpenShift
+#### Using Provided OpenShift Template
+##### Option 1: Make template available cluster wide
+```sh
+oc create -f https://raw.githubusercontent.com/abn/openshift-jenkins-slave-custom/master/openshift/template.yml
+```
+
+##### Option 2: Use the template via the CLI
+```sh
+oc process \
+  -p BASE_IMAGE=rhel-atomic \
+  -p BASE_IMAGE_NAMESPACE=openshift \
+  -p JENKINS_SLAVE_BUILD=base \
+  -p JENKINS_SLAVE_VERSION=7.4 \
+  -p JENKINS_SLAVE_RELEASE=1 \
+  -p 'EXTRA_PACKAGES="git make gcc"' \
+  -f https://raw.githubusercontent.com/abn/openshift-jenkins-slave-custom/master/openshift/template.yml \
+```
 #### Example Build Configuration
 The following build configuration will work on any OpenShift Container Platform cluster with valid host subscriptions and a pre-defined image stream.
 
