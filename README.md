@@ -83,3 +83,12 @@ spec:
       kind: ImageStreamTag
       name: 'jenkins-slave-rhel-atomic:latest'
 ```
+
+### FAQs
+#### Running behind proxies
+As with any Jenkins slave image instances; proxies are expected to be configured so that the the following can be done.
+
+1. Download `remoting.jar` from the master node. In kubernetes/openshift context, this would be <master-pod-ip>:80. This is done using `curl` from the [run-jnlp-client](https://github.com/openshift/jenkins/blob/master/slave-base/contrib/bin/run-jnlp-client#L58) script. If the container has any of the proxy environment variables set, make sure that they are configured so that the command succeeds. Watch out for 50x error htmls in the jar file.
+2. Java runtime can communicate with the master pod-ip. The java command is forked from the [run-jnlp-client](https://github.com/openshift/jenkins/blob/master/slave-base/contrib/bin/run-jnlp-client#L134) script.
+3. Optionally, if you want internet access from within the slave during pipeline executions etc.; ensure the configuration allows for that.
+
